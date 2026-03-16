@@ -201,8 +201,12 @@ export const useStore = create<PapatongStore>((set, get) => ({
     const e = get().entries.find(en => en.id === id)
     if (!e) return
     const { error } = await supabase.from('practice_entries').update({
-      practiced_at: e.practiced_at, note: e.note || '',
-      title: e.title || '', tags: e.tags || [],
+      practiced_at:  e.practiced_at,
+      note:          e.note || '',
+      title:         e.title || '',
+      tags:          e.tags || [],
+      skill_ids:     e.skill_ids || [],
+      spont_skills:  e.spont_skills || [],
     }).eq('id', id)
     if (error) console.error('updateEntry:', error.message)
   },

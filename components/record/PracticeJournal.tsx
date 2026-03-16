@@ -65,6 +65,11 @@ export default function PracticeJournal({ onBack }: Props) {
   const [editNote, setEditNote] = useState('')
   const [editTitle, setEditTitle] = useState('')
   const [editDate, setEditDate] = useState('')
+  const [editSkillIds, setEditSkillIds] = useState<string[]>([])
+  const [editSpontSkills, setEditSpontSkills] = useState<string[]>([])
+  const [editTags, setEditTags] = useState<string[]>([])
+  const [editTagInput, setEditTagInput] = useState('')
+  const [skillSearch, setSkillSearch] = useState('')
 
   const openEntry = openId ? entries.find(e => e.id === openId) : null
   const allTags = [...new Set(entries.flatMap(e => e.tags ?? []))]
@@ -142,21 +147,127 @@ export default function PracticeJournal({ onBack }: Props) {
           <div className="max-w-[640px] mx-auto px-5 pt-8 pb-20">
             <BackBtn onClick={() => { setOpenId(null); setEditId(null) }} />
             {editId === openEntry.id ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="Session title…" />
+
                 <div className="flex items-center gap-2">
-                  <span className="text-[12px] text-text-secondary">Date</span>
+                  <span className="text-[12px] text-text-secondary whitespace-nowrap">Date</span>
                   <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)}
                     className="flex-1 bg-surface border border-border-default text-text-primary rounded px-2.5 py-1.5 text-[13px] focus:outline-none" />
                 </div>
-                <Textarea value={editNote} onChange={e => setEditNote(e.target.value)} style={{ minHeight: 200 }} />
-                <div className="flex justify-end gap-2">
+
+                {/* Skills */}
+                <div>
+                  <p className="text-[11px] font-medium text-text-secondary mb-2 tracking-wide uppercase">Skills</p>
+                  {/* Current skill pills */}
+                  <div className="flex flex-wrap gap-1.5 mb-2 min-h-[24px]">
+                    {editSkillIds.map(id => {
+                      const s = skills.find(x => x.id === id)
+                      if (!s) return null
+                      const cat = categories.find(c => c.id === s.catId)
+                      const p = cat ? palColor(cat.color) : null
+                      return (
+                        <span key={id} className="flex items-center gap-1 text-[11px] px-2 py-[2px] rounded-full" style={p ? { background: p.bg, color: p.text } : { background: '#242422', color: '#9a9a94' }}>
+                          {s.name}
+                          <button onClick={() => setEditSkillIds(prev => prev.filter(x => x !== id))} className="border-none bg-transparent cursor-pointer opacity-60 hover:opacity-100 text-[10px] leading-none">✕</button>
+                        </span>
+                      )
+                    })}
+                    {editSpontSkills.map((n, i) => (
+                      <span key={i} className="flex items-center gap-1 text-[11px] px-2 py-[2px] rounded-full bg-surface2 text-text-secondary italic">
+                        {n}
+                        <button onClick={() => setEditSpontSkills(prev => prev.filter((_, j) => j !== i))} className="border-none bg-transparent cursor-pointer opacity-60 hover:opacity-100 text-[10px] leading-none">✕</button>
+                      </span>
+                    ))}
+                  </div>
+                  {/* Skill search to add */}
+                  <Input
+                    value={skillSearch}
+                    onChange={e => setSkillSearch(e.target.value)}
+                    placeholder="Search skills to add…"
+                  />
+                  {skillSearch.trim() && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+                      {skills
+                        .filter(s => s.name.toLowerCase().includes(skillSearch.toLowerCase()) && !editSkillIds.includes(s.id))
+                        .slice(0, 12)
+                        .map(s => {
+                          const cat = categories.find(c => c.id === s.catId)
+                          const p = cat ? palColor(cat.color) : null
+                          return (
+                            <button
+                              key={s.id}
+                              onClick={() => { setEditSkillIds(prev => [...prev, s.id]); setSkillSearch('') }}
+                              className="text-[11px] px-2 py-[2px] rounded-full cursor-pointer border-none transition-opacity hover:opacity-80"
+                              style={p ? { background: p.bg, color: p.text } : { background: '#242422', color: '#9a9a94' }}
+                            >
+                              {s.name}
+                            </button>
+                          )
+                        })
+                      }
+                    </div>
+                  )}
+                </div>
+
+                {/* Note */}
+                <Textarea value={editNote} onChange={e => setEditNote(e.target.value)} style={{ minHeight: 160 }} />
+
+                {/* Tags */}
+                <div>
+                  <p className="text-[11px] font-medium text-text-secondary mb-2 tracking-wide uppercase">Tags</p>
+                  <div className="flex flex-wrap gap-1.5 mb-2 min-h-[24px]">
+                    {editTags.map((t, i) => (
+                      <span key={i} className="flex items-center gap-1 bg-surface2 border border-border-default rounded-full px-2.5 py-0.5 text-[11px]">
+                        {t}
+                        <button onClick={() => setEditTags(prev => prev.filter((_, j) => j !== i))} className="text-text-hint hover:text-red border-none bg-transparent cursor-pointer text-[10px] leading-none">✕</button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={editTagInput}
+                      onChange={e => setEditTagInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          const v = editTagInput.trim().toLowerCase()
+                          if (v && !editTags.includes(v)) setEditTags(prev => [...prev, v])
+                          setEditTagInput('')
+                        }
+                      }}
+                      placeholder="Add a tag…"
+                      className="flex-1"
+                    />
+                    <Btn size="sm" onClick={() => {
+                      const v = editTagInput.trim().toLowerCase()
+                      if (v && !editTags.includes(v)) setEditTags(prev => [...prev, v])
+                      setEditTagInput('')
+                    }}>Add</Btn>
+                  </div>
+                  {/* Suggest existing tags */}
+                  {allTags.filter(t => !editTags.includes(t)).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {allTags.filter(t => !editTags.includes(t)).slice(0, 8).map(t => (
+                        <button
+                          key={t}
+                          onClick={() => setEditTags(prev => [...prev, t])}
+                          className="px-2 py-[2px] text-[11px] rounded-full border border-border-subtle text-text-hint hover:text-text-primary hover:border-border-default bg-transparent cursor-pointer transition-colors"
+                        >{t}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
                   <Btn size="sm" onClick={() => setEditId(null)}>Cancel</Btn>
                   <Btn size="sm" variant="primary" onClick={async () => {
                     await updateEntry(openEntry.id, {
                       title: editTitle,
                       note: editNote,
                       practiced_at: new Date(editDate + 'T12:00:00').toISOString(),
+                      skill_ids: editSkillIds,
+                      spont_skills: editSpontSkills,
+                      tags: editTags,
                     })
                     setEditId(null)
                   }}>Save</Btn>
@@ -191,6 +302,11 @@ export default function PracticeJournal({ onBack }: Props) {
                     setEditNote(openEntry.note ?? '')
                     setEditTitle(openEntry.title ?? '')
                     setEditDate(toDateInput(openEntry.practiced_at))
+                    setEditSkillIds([...(openEntry.skill_ids ?? [])])
+                    setEditSpontSkills([...(openEntry.spont_skills ?? [])])
+                    setEditTags([...(openEntry.tags ?? [])])
+                    setEditTagInput('')
+                    setSkillSearch('')
                   }}>Edit</Btn>
                   <Btn size="sm" variant="danger" onClick={async () => {
                     await deleteEntry(openEntry.id)
