@@ -3,7 +3,8 @@ import { useState, useMemo } from 'react'
 import { useStore } from '@/lib/store'
 import { palColor, confInfo } from '@/lib/palette'
 import { practiceVolumeCurve, computeSkillStats } from '@/lib/algorithms'
-import { SectionTitle, Card, Empty } from '@/components/shared/ui'
+import { SectionTitle, Empty } from '@/components/shared/ui'
+import type { PracticeEntry, Skill, PracticeLog, Category } from '@/types'
 import clsx from 'clsx'
 
 type AnalyticsView = 'rhythm' | 'momentum' | 'neglect' | 'volume' | 'confidence'
@@ -97,7 +98,7 @@ export default function AnalyticsSection() {
 }
 
 // ── Rhythm ────────────────────────────────────────
-function RhythmView({ entries, total, streak }: { entries: ReturnType<typeof useStore>['entries'], total: number, streak: number }) {
+function RhythmView({ entries, total, streak }: { entries: PracticeEntry[], total: number, streak: number }) {
   const days = 90
   const today = new Date(); today.setHours(0,0,0,0)
   const entryDates = new Set(entries.map(e => e.practiced_at.slice(0,10)))
@@ -169,7 +170,7 @@ function RhythmView({ entries, total, streak }: { entries: ReturnType<typeof use
 }
 
 // ── Volume Curve ──────────────────────────────────
-function VolumeView({ entries }: { entries: ReturnType<typeof useStore>['entries'] }) {
+function VolumeView({ entries }: { entries: PracticeEntry[] }) {
   const data = useMemo(() => practiceVolumeCurve(entries, 24), [entries])
   if (!data.length) return <Empty>No data yet.</Empty>
   const maxCount = Math.max(1, ...data.map(d => d.count))
@@ -225,7 +226,7 @@ function VolumeView({ entries }: { entries: ReturnType<typeof useStore>['entries
 }
 
 // ── Momentum ──────────────────────────────────────
-function MomentumView({ stats, skills }: { stats: ReturnType<typeof computeSkillStats>[], skills: ReturnType<typeof useStore>['skills'] }) {
+function MomentumView({ stats, skills }: { stats: ReturnType<typeof computeSkillStats>[], skills: Skill[] }) {
   const ranked = [...stats].sort((a, b) => b.momentumScore - a.momentumScore).slice(0, 15)
   if (!ranked.length || ranked.every(s => s.momentumScore === 0)) return <Empty>No practice data yet.</Empty>
   const max = Math.max(1, ranked[0].momentumScore)
@@ -255,7 +256,7 @@ function MomentumView({ stats, skills }: { stats: ReturnType<typeof computeSkill
 }
 
 // ── Neglect ───────────────────────────────────────
-function NeglectView({ stats, skills }: { stats: ReturnType<typeof computeSkillStats>[], skills: ReturnType<typeof useStore>['skills'] }) {
+function NeglectView({ stats, skills }: { stats: ReturnType<typeof computeSkillStats>[], skills: Skill[] }) {
   const ranked = [...stats].sort((a, b) => b.neglectScore - a.neglectScore).slice(0, 15)
   if (!ranked.length) return <Empty>No skills yet.</Empty>
   const max = Math.max(1, ranked[0].neglectScore)
@@ -289,7 +290,7 @@ function NeglectView({ stats, skills }: { stats: ReturnType<typeof computeSkillS
 }
 
 // ── Confidence Map ────────────────────────────────
-function ConfidenceView({ skills, categories }: { skills: ReturnType<typeof useStore>['skills'], categories: ReturnType<typeof useStore>['categories'] }) {
+function ConfidenceView({ skills, categories }: { skills: Skill[], categories: Category[] }) {
   return (
     <div>
       <SectionTitle className="mb-1">Confidence map</SectionTitle>
