@@ -9,12 +9,14 @@ export const supabase = createClient(url, key)
 // ── Normalize DB rows to app types ───────────────
 export function normalizeSkill(row: Record<string, unknown>): Skill {
   return {
-    ...(row as Skill),
-    catId:    (row.cat_id    ?? row.catId    ?? null) as string | null,
-    domainId: (row.domain_id ?? row.domainId ?? null) as string | null,
-    tag:      (row.tag ?? '') as string,
-    priority: Boolean(row.priority),
+    id:         row.id as string,
+    name:       row.name as string,
+    catId:      (row.cat_id    ?? row.catId    ?? null) as string | null,
+    domainId:   (row.domain_id ?? row.domainId ?? null) as string | null,
+    tag:        (row.tag ?? '') as string,
+    priority:   Boolean(row.priority),
     confidence: (Number(row.confidence) || 1) as 1|2|3|4,
+    created_at: row.created_at as string | undefined,
   }
 }
 
@@ -22,11 +24,13 @@ export function normalizeEntry(row: Record<string, unknown>): PracticeEntry {
   const techIds = (row.tech_ids as string[] | undefined) ?? []
   const vocIds  = (row.voc_ids  as string[] | undefined) ?? []
   return {
-    ...(row as PracticeEntry),
+    id:           row.id as string,
+    practiced_at: row.practiced_at as string,
     skill_ids:    (row.skill_ids as string[] | undefined) ?? [...techIds, ...vocIds],
+    spont_skills: (row.spont_skills as string[] | undefined) ?? [],
+    note:         (row.note ?? '') as string,
     title:        (row.title ?? '') as string,
-    tags:         (row.tags  ?? []) as string[],
-    spont_skills: (row.spont_skills ?? []) as string[],
+    tags:         (row.tags ?? []) as string[],
   }
 }
 
