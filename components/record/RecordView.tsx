@@ -19,25 +19,33 @@ function calcStreak(dates: string[]): number {
 export default function RecordView() {
   const { entries, cards } = useStore()
   const [open, setOpen] = useState<'' | 'practice' | 'knowledge'>('')
+  // Lifted card open state — allows cross-navigation from journal → card
+  const [openCardId, setOpenCardId] = useState<string | null>(null)
 
   const practiceStreak = calcStreak(entries.map(e => e.practiced_at.slice(0, 10)))
+
+  function navigateToCard(cardId: string) {
+    // Switch to knowledge page and open that card
+    setOpen('knowledge')
+    setOpenCardId(cardId)
+  }
 
   return (
     <div>
       {/* Practice Journal slide-in page */}
       <div className={clsx('slide-page', open === 'practice' && 'open')}>
         <div className="max-w-[640px] mx-auto px-5 pt-8 pb-20">
-          <PracticeJournal onBack={() => setOpen('')} />
+          <PracticeJournal onBack={() => setOpen('')} onNavigateToCard={navigateToCard} />
         </div>
       </div>
 
       {/* Knowledge slide-in page */}
       <div className={clsx('slide-page', open === 'knowledge' && 'open')}>
         <div className="max-w-[640px] mx-auto px-5 pt-8 pb-20">
-          <button onClick={() => setOpen('')} className="flex items-center gap-1.5 text-[13px] text-text-secondary hover:text-text-primary transition-colors bg-transparent border-none cursor-pointer mb-6">
+          <button onClick={() => { setOpen(''); setOpenCardId(null) }} className="flex items-center gap-1.5 text-[13px] text-text-secondary hover:text-text-primary transition-colors bg-transparent border-none cursor-pointer mb-6">
             ← Journals
           </button>
-          <KnowledgeView />
+          <KnowledgeView initialOpenCardId={openCardId} onClearInitialCard={() => setOpenCardId(null)} />
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useStore } from '@/lib/store'
 import { palColor } from '@/lib/palette'
 import { SectionTitle, Empty, Input } from '@/components/shared/ui'
@@ -13,10 +13,15 @@ function snippet(body: string, len = 80): string {
   return body.replace(/#{1,6}\s/g, '').replace(/[-*]\s/g, '').replace(/\n/g, ' ').trim().slice(0, len)
 }
 
-export default function KnowledgeView() {
+interface KnowledgeViewProps {
+  initialOpenCardId?: string | null
+  onClearInitialCard?: () => void
+}
+
+export default function KnowledgeView({ initialOpenCardId, onClearInitialCard }: KnowledgeViewProps = {}) {
   const { cards, skills, categories, addCard } = useStore()
   const [search, setSearch] = useState('')
-  const [openId, setOpenId] = useState<string | null>(null)
+  const [openId, setOpenId] = useState<string | null>(initialOpenCardId ?? null)
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
 
@@ -28,6 +33,11 @@ export default function KnowledgeView() {
       c.body.toLowerCase().includes(q)
     )
   }, [cards, search])
+
+  // Sync when parent navigates us to a specific card
+  useEffect(() => {
+    if (initialOpenCardId) setOpenId(initialOpenCardId)
+  }, [initialOpenCardId])
 
   const openCard = openId ? cards.find(c => c.id === openId) : null
 
@@ -59,7 +69,7 @@ export default function KnowledgeView() {
           <div className="max-w-[640px] mx-auto px-5 pt-8 pb-20">
             <KnowledgeCardDetail
               card={openCard}
-              onBack={() => setOpenId(null)}
+              onBack={() => { setOpenId(null); onClearInitialCard?.() }}
               onNavigate={id => setOpenId(id)}
             />
           </div>

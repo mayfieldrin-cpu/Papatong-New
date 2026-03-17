@@ -53,10 +53,10 @@ function weekLabel(iso: string) {
   return `${f(d)} – ${f(e)}`
 }
 
-interface Props { onBack: () => void }
+interface Props { onBack: () => void; onNavigateToCard?: (cardId: string) => void }
 
-export default function PracticeJournal({ onBack }: Props) {
-  const { entries, categories, skills, updateEntry, deleteEntry } = useStore()
+export default function PracticeJournal({ onBack, onNavigateToCard }: Props) {
+  const { entries, categories, skills, cards, updateEntry, deleteEntry } = useStore()
   const [sort, setSort] = useState<'newest'|'oldest'|'week'>('newest')
   const [weekOffset, setWeekOffset] = useState(0)
   const [subView, setSubView] = useState<'entries'|'tags'>('entries')
@@ -136,6 +136,15 @@ export default function PracticeJournal({ onBack }: Props) {
             ))}
           </div>
         )}
+        {(() => {
+          const linkedCount = cards.filter(c => (c.linked_entry_ids ?? []).includes(e.id)).length
+          if (!linkedCount) return null
+          return (
+            <p className="font-mono text-[10px] text-text-hint mt-1.5">
+              {linkedCount} knowledge card{linkedCount !== 1 ? 's' : ''}
+            </p>
+          )
+        })()}
       </div>
     )
   }
@@ -297,6 +306,37 @@ export default function PracticeJournal({ onBack }: Props) {
                     ))}
                   </div>
                 )}
+
+                {/* Linked knowledge cards */}
+                {(() => {
+                  const linkedCards = cards.filter(c => (c.linked_entry_ids ?? []).includes(openEntry.id))
+                  if (!linkedCards.length) return null
+                  return (
+                    <div className="mt-6 pt-5 border-t border-border-subtle">
+                      <p className="font-mono text-[10px] uppercase tracking-widest text-text-hint mb-2.5">Knowledge cards</p>
+                      <div className="flex flex-col gap-1.5">
+                        {linkedCards.map(c => (
+                          <button
+                            key={c.id}
+                            onClick={() => onNavigateToCard?.(c.id)}
+                            className="flex items-center gap-3 bg-surface2 border border-border-subtle rounded-lg px-3 py-2.5 text-left hover:border-border-default transition-colors cursor-pointer w-full group"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13px] text-text-primary truncate">{c.title}</p>
+                              {c.body && (
+                                <p className="text-[11px] text-text-secondary truncate mt-0.5">
+                                  {c.body.replace(/<[^>]+>/g, '').slice(0, 60)}
+                                </p>
+                              )}
+                            </div>
+                            <span className="text-text-hint group-hover:text-text-secondary text-[13px] flex-shrink-0 transition-colors">→</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+
                 <div className="flex justify-end gap-2 mt-6">
                   <Btn size="sm" onClick={() => {
                     setEditId(openEntry.id)
