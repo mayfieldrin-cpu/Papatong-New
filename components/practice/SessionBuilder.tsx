@@ -81,7 +81,7 @@ export default function SessionBuilder() {
   const shuffleSkillIds = activeCats.flatMap(c =>
     (sessionSlots[c.id] ?? []).filter(s => s.skillId).map(s => s.skillId!)
   )
-  const allSkillIds = [...new Set([...shuffleSkillIds, ...manualSkillIds])]
+  const allSkillIds = [...new Set([...shuffleSkillIds, ...manualSelected])]
   const hasSlots = allSkillIds.length > 0 || spontSkills.length > 0 || manualSelected.length > 0
 
   const existingTags = [...new Set(entries.flatMap(e => e.tags ?? []))]
