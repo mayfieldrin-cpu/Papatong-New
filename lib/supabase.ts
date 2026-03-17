@@ -16,6 +16,7 @@ export function normalizeSkill(row: Record<string, unknown>): Skill {
     tag:        (row.tag ?? '') as string,
     priority:   Boolean(row.priority),
     confidence: (Number(row.confidence) || 1) as 1|2|3|4,
+    goal:       row.goal != null ? Number(row.goal) : null,
     created_at: row.created_at as string | undefined,
   }
 }

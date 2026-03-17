@@ -34,6 +34,7 @@ export interface Skill {
   tag: string
   priority: boolean
   confidence: ConfidenceLevel
+  goal?: number | null   // monthly practice target
   created_at?: string
   // DB columns (snake_case from Supabase)
   cat_id?: string | null
