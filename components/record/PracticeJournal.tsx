@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useStore } from '@/lib/store'
 import { palColor } from '@/lib/palette'
 import { BackBtn, Btn, Card, SectionTitle, Empty, Input, Textarea, Select } from '@/components/shared/ui'
+import RichEditor from '@/components/shared/RichEditor'
 import type { PracticeEntry } from '@/types'
 import clsx from 'clsx'
 
@@ -284,8 +285,8 @@ export default function PracticeJournal({ onBack }: Props) {
                   <>
                     <div className="h-px bg-border-subtle my-5" />
                     <div
-                      className="text-[14px] leading-[1.8] text-text-primary"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(openEntry.note) }}
+                      className="text-[14px] leading-[1.8] text-text-primary tiptap-editor"
+                      dangerouslySetInnerHTML={{ __html: openEntry.note }}
                     />
                   </>
                 )}

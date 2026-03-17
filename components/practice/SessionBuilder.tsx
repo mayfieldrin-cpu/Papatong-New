@@ -4,6 +4,7 @@ import { useStore } from '@/lib/store'
 import { palColor } from '@/lib/palette'
 import { sortedSuggestions, neglectScore, momentumScore } from '@/lib/algorithms'
 import { Btn, Card, SectionTitle, Dot, ConfBadge, Input, Textarea, Empty } from '@/components/shared/ui'
+import RichEditor from '@/components/shared/RichEditor'
 import type { Slot, Skill } from '@/types'
 import clsx from 'clsx'
 
@@ -539,11 +540,12 @@ export default function SessionBuilder() {
         />
 
         {/* Note */}
-        <p className="text-[11px] text-text-hint mb-1.5">Use - for bullets · 1. for numbered · indent with spaces</p>
-        <Textarea
-          value={logNote}
-          onChange={e => setLogNote(e.target.value)}
+        <RichEditor
+          content={logNote}
+          onChange={setLogNote}
           placeholder="What did you try? · What surprised you? · What would you do differently?"
+          minHeight={160}
+          className="mb-0"
         />
 
         {/* Tags */}

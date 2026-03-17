@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useStore } from '@/lib/store'
 import { palColor, confInfo } from '@/lib/palette'
 import { BackBtn, Btn, Input, Textarea, SectionTitle } from '@/components/shared/ui'
+import RichEditor from '@/components/shared/RichEditor'
 import type { KnowledgeCard } from '@/types'
 import clsx from 'clsx'
 
@@ -183,8 +184,12 @@ export default function KnowledgeCardDetail({ card, onBack, onNavigate }: Props)
           {/* Body */}
           <div>
             <label className="block text-[11px] font-medium text-text-secondary mb-1.5 uppercase tracking-wide">Body</label>
-            <p className="text-[11px] text-text-hint mb-1.5">Markdown supported — # heading, - bullet, 1. numbered</p>
-            <Textarea value={editBody} onChange={e => setEditBody(e.target.value)} style={{ minHeight: 240 }} />
+            <RichEditor
+              content={editBody}
+              onChange={setEditBody}
+              placeholder="Write your notes, steps, tips… Use # for headings, - for bullets"
+              minHeight={240}
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
@@ -233,8 +238,8 @@ export default function KnowledgeCardDetail({ card, onBack, onNavigate }: Props)
             <>
               <div className="h-px bg-border-subtle mb-4" />
               <div
-                className="text-[14px] leading-[1.8] text-text-primary"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(card.body) }}
+                className="text-[14px] leading-[1.8] text-text-primary tiptap-editor"
+                dangerouslySetInnerHTML={{ __html: card.body }}
               />
             </>
           ) : (
