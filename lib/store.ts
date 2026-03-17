@@ -160,6 +160,7 @@ export const useStore = create<PapatongStore>((set, get) => ({
       cat_id: s.catId || null, domain_id: s.domainId || null,
       tag: s.tag || '', priority: s.priority === true,
       confidence: Number(s.confidence) || 1,
+      goal: s.goal ?? null,
     }
     const { error } = await supabase.from('skills').insert(row)
     if (error) console.error('addSkill:', error.message, row)
@@ -172,6 +173,7 @@ export const useStore = create<PapatongStore>((set, get) => ({
       name: s.name, cat_id: s.catId || null, domain_id: s.domainId || null,
       tag: s.tag || '', priority: s.priority === true,
       confidence: Number(s.confidence) || 1,
+      goal: s.goal ?? null,
     }
     const { error } = await supabase.from('skills').update(row).eq('id', id)
     if (error) console.error('updateSkill:', error.message)

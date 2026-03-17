@@ -56,6 +56,9 @@ export default function SessionBuilder() {
   const [spontInput, setSpontInput] = useState('')
   const [tagInput, setTagInput] = useState('')
   const [saving, setSaving] = useState(false)
+  const [shuffleOpen, setShuffleOpen] = useState(true)
+  const [manualSearch, setManualSearch] = useState('')
+  const [manualSelected, setManualSelected] = useState<string[]>([])
 
   // Ensure slots exist for all categories
   useEffect(() => {
@@ -75,10 +78,11 @@ export default function SessionBuilder() {
       sortedSuggestions(logs, skills, c.id).map(s => ({ skill: s, cat: c }))
     ), [activeCats, logs, skills])
 
-  const allSkillIds = activeCats.flatMap(c =>
+  const shuffleSkillIds = activeCats.flatMap(c =>
     (sessionSlots[c.id] ?? []).filter(s => s.skillId).map(s => s.skillId!)
   )
-  const hasSlots = allSkillIds.length > 0 || spontSkills.length > 0
+  const allSkillIds = [...new Set([...shuffleSkillIds, ...manualSkillIds])]
+  const hasSlots = allSkillIds.length > 0 || spontSkills.length > 0 || manualSelected.length > 0
 
   const existingTags = [...new Set(entries.flatMap(e => e.tags ?? []))]
 
@@ -165,6 +169,8 @@ export default function SessionBuilder() {
       tags: [...logTags],
     })
     resetSession()
+    setManualSelected([])
+    setManualSearch('')
     setSaving(false)
   }
 
@@ -195,6 +201,19 @@ export default function SessionBuilder() {
           })}
         </div>
       </Card>
+
+      {/* Shuffle section — collapseable */}
+      <div className="border border-border-subtle rounded-lg overflow-hidden">
+        <button
+          onClick={() => setShuffleOpen(o => !o)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-surface hover:bg-surface2 transition-colors cursor-pointer border-none text-left"
+        >
+          <span className="text-[13px] font-medium text-text-primary">Shuffle</span>
+          <span className="text-text-hint text-[12px]">{shuffleOpen ? '▲' : '▼'}</span>
+        </button>
+
+        {shuffleOpen && (
+          <div className="p-4 pt-3 space-y-4 border-t border-border-subtle">
 
       {/* Suggestions */}
       {allSuggestions.length > 0 && (
@@ -230,14 +249,82 @@ export default function SessionBuilder() {
         </div>
       )}
 
-      {/* Shuffle */}
-      <div className="flex items-center gap-2">
-        <Btn onClick={shuffleAll} size="sm" disabled={activeCats.length === 0}>
-          Shuffle all
-        </Btn>
+      {/* Manual skill picker */}
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-text-hint">Manual pick</span>
+          <span className="text-[11px] text-text-hint">{manualSelected.length} selected</span>
+        </div>
+        <Input
+          value={manualSearch}
+          onChange={e => setManualSearch(e.target.value)}
+          placeholder="Search skills…"
+          className="mb-2.5"
+        />
+        {manualSearch.trim() ? (
+          <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+            {skills
+              .filter(s => s.name.toLowerCase().includes(manualSearch.toLowerCase()))
+              .slice(0, 20)
+              .map(s => {
+                const cat = categories.find(c => c.id === s.catId)
+                const p = cat ? palColor(cat.color) : null
+                const sel = manualSelected.includes(s.id)
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setManualSelected(prev => sel ? prev.filter(x => x !== s.id) : [...prev, s.id])}
+                    className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border transition-all cursor-pointer"
+                    style={sel
+                      ? { background: p?.dot ?? '#5a5a56', color: 'white', borderColor: 'transparent' }
+                      : p ? { background: p.bg, color: p.text, borderColor: 'transparent' } : { background: '#242422', color: '#9a9a94', borderColor: 'transparent' }
+                    }
+                  >
+                    {sel && <span className="text-[9px]">✓</span>}
+                    {s.name}
+                  </button>
+                )
+              })
+            }
+          </div>
+        ) : manualSelected.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {manualSelected.map(id => {
+              const s = skills.find(x => x.id === id)
+              if (!s) return null
+              const cat = categories.find(c => c.id === s.catId)
+              const p = cat ? palColor(cat.color) : null
+              return (
+                <span key={id} className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full" style={p ? { background: p.bg, color: p.text } : { background: '#242422', color: '#9a9a94' }}>
+                  {s.name}
+                  <button onClick={() => setManualSelected(prev => prev.filter(x => x !== id))} className="border-none bg-transparent cursor-pointer opacity-60 hover:opacity-100 text-[10px]">✕</button>
+                </span>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="text-[12px] text-text-hint italic">Search to add skills directly to the log.</p>
+        )}
+      </Card>
+
+      {/* Shuffle toggle */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setShowShuffle(v => !v)}
+          className="flex items-center gap-2 text-[12px] text-text-secondary hover:text-text-primary transition-colors bg-transparent border-none cursor-pointer font-sans"
+        >
+          <span>{showShuffle ? '▾' : '▸'}</span>
+          <span>Shuffle</span>
+        </button>
+        {showShuffle && (
+          <Btn onClick={shuffleAll} size="sm" disabled={activeCats.length === 0}>
+            Shuffle all
+          </Btn>
+        )}
       </div>
 
-      {/* Session columns */}
+      {/* Session columns — collapseable */}
+      {showShuffle && (
       <div
         className="grid gap-4"
         style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(activeCats.length, 1), 3)}, 1fr)` }}
@@ -315,6 +402,65 @@ export default function SessionBuilder() {
           )
         })}
       </div>
+      )}
+
+          </div>
+        )}
+      </div>
+
+      {/* Manual skill picker */}
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[13px] font-medium">Manual pick</span>
+          <span className="text-[11px] text-text-hint">{manualSelected.length} selected</span>
+        </div>
+        {manualSelected.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {manualSelected.map(id => {
+              const s = skills.find(x => x.id === id)
+              const cat = s ? categories.find(c => c.id === s.catId) : null
+              const p = cat ? palColor(cat.color) : null
+              return s ? (
+                <span key={id} className="flex items-center gap-1 text-[11px] px-2 py-[2px] rounded-full" style={p ? { background: p.bg, color: p.text } : { background: '#242422', color: '#9a9a94' }}>
+                  {s.name}
+                  <button onClick={() => setManualSelected(prev => prev.filter(x => x !== id))} className="border-none bg-transparent cursor-pointer opacity-60 hover:opacity-100 text-[10px] leading-none">✕</button>
+                </span>
+              ) : null
+            })}
+            <button onClick={() => setManualSelected([])} className="text-[11px] text-text-hint hover:text-red bg-transparent border-none cursor-pointer px-1">Clear all</button>
+          </div>
+        )}
+        <Input
+          value={manualSearch}
+          onChange={e => setManualSearch(e.target.value)}
+          placeholder="Search skills…"
+        />
+        {manualSearch.trim() && (
+          <div className="mt-2 flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+            {skills
+              .filter(s => s.name.toLowerCase().includes(manualSearch.toLowerCase()) && !manualSelected.includes(s.id))
+              .slice(0, 20)
+              .map(s => {
+                const cat = categories.find(c => c.id === s.catId)
+                const p = cat ? palColor(cat.color) : null
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => { setManualSelected(prev => [...prev, s.id]); setManualSearch('') }}
+                    className="text-[11px] px-2.5 py-1 rounded-full cursor-pointer border-none transition-opacity hover:opacity-80"
+                    style={p ? { background: p.bg, color: p.text } : { background: '#242422', color: '#9a9a94' }}
+                  >
+                    {s.name}
+                  </button>
+                )
+              })
+            }
+            {skills.filter(s => s.name.toLowerCase().includes(manualSearch.toLowerCase()) && !manualSelected.includes(s.id)).length === 0 && (
+              <p className="text-[12px] text-text-hint italic">No matching skills</p>
+            )}
+          </div>
+        )}
+      </Card>
 
       {/* Spontaneous */}
       <Card>
@@ -354,17 +500,17 @@ export default function SessionBuilder() {
         {/* Skill pills preview */}
         {hasSlots ? (
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {activeCats.flatMap(c =>
-              (sessionSlots[c.id] ?? []).filter(s => s.skillId).map(s => {
-                const skill = skills.find(x => x.id === s.skillId)
-                const p = palColor(c.color)
-                return skill ? (
-                  <span key={skill.id} className="text-[11px] px-2 py-[2px] rounded-full" style={{ background: p.bg, color: p.text }}>
-                    {skill.name}
-                  </span>
-                ) : null
-              })
-            )}
+            {allSkillIds.map(id => {
+              const skill = skills.find(x => x.id === id)
+              if (!skill) return null
+              const cat = categories.find(c => c.id === skill.catId)
+              const p = cat ? palColor(cat.color) : null
+              return (
+                <span key={id} className="text-[11px] px-2 py-[2px] rounded-full" style={p ? { background: p.bg, color: p.text } : { background: '#242422', color: '#9a9a94' }}>
+                  {skill.name}
+                </span>
+              )
+            })}
             {spontSkills.map((s, i) => (
               <span key={i} className="text-[11px] px-2 py-[2px] rounded-full bg-surface2 text-text-secondary italic">{s}</span>
             ))}

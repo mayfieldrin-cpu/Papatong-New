@@ -184,10 +184,19 @@ export default function LibrarySection() {
                         </div>
                         {/* Progress bar + stats */}
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-[3px] bg-surface2 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: skill.priority ? '#EF9F27' : (dp?.dot ?? '#5a5a56') }} />
+                          <div className="flex-1 h-[3px] bg-surface2 rounded-full overflow-hidden relative">
+                            <div className="h-full rounded-full transition-all" style={{
+                              width: skill.goal
+                                ? `${Math.min(100, Math.round(((stats?.count ?? 0) / skill.goal) * 100))}%`
+                                : `${pct}%`,
+                              background: skill.goal && (stats?.count ?? 0) >= skill.goal
+                                ? '#1D9E75'
+                                : skill.priority ? '#EF9F27' : (dp?.dot ?? '#5a5a56')
+                            }} />
                           </div>
-                          <span className="font-mono text-[10px] text-text-hint whitespace-nowrap">{stats?.count ?? 0}×</span>
+                          <span className="font-mono text-[10px] text-text-hint whitespace-nowrap">
+                            {stats?.count ?? 0}{skill.goal ? `/${skill.goal}` : '×'}
+                          </span>
                           {/* Momentum indicator */}
                           <span
                             className="font-mono text-[9px] px-1.5 py-[1px] rounded"

@@ -3,8 +3,11 @@ import { useState } from 'react'
 import { useStore } from '@/lib/store'
 import { palColor, PALETTE } from '@/lib/palette'
 import { Btn, SectionTitle, Input } from '@/components/shared/ui'
+import MonthlyReview from './MonthlyReview'
 import type { PaletteId } from '@/types'
 import clsx from 'clsx'
+
+type SettingsTab = 'categories' | 'review'
 
 function uid() { return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) }
 
@@ -12,6 +15,7 @@ export default function SettingsView() {
   const { categories, domains, skills, addCategory, updateCategory, deleteCategory, addDomain, updateDomain, deleteDomain } = useStore()
   const [editCat, setEditCat] = useState<string|null>(null)
   const [editDomain, setEditDomain] = useState<string|null>(null)
+  const [tab, setTab] = useState<SettingsTab>('categories')
 
   async function newCat() {
     const used = new Set(categories.map(c => c.color))
@@ -31,7 +35,26 @@ export default function SettingsView() {
 
   return (
     <div>
-      <h1 className="text-[15px] font-medium mb-6">Settings</h1>
+      <h1 className="text-[15px] font-medium mb-5">Settings</h1>
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6">
+        {([['categories', 'Categories & Domains'], ['review', 'Monthly Review']] as [SettingsTab, string][]).map(([k, l]) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={clsx(
+              'px-3.5 py-[5px] text-[13px] rounded border transition-all cursor-pointer font-sans',
+              tab === k
+                ? 'bg-surface2 text-text-primary border-border-default font-medium'
+                : 'bg-transparent text-text-secondary border-transparent hover:text-text-primary hover:bg-surface'
+            )}
+          >{l}</button>
+        ))}
+      </div>
+
+      {tab === 'review' && <MonthlyReview />}
+      {tab === 'categories' && <div>
 
       {/* Domains */}
       <section className="mb-8">
@@ -158,6 +181,7 @@ export default function SettingsView() {
           })}
         </div>
       </section>
+    </div>}
     </div>
   )
 }
