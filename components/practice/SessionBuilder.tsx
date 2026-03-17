@@ -310,13 +310,13 @@ export default function SessionBuilder() {
       {/* Shuffle toggle */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => setShowShuffle(v => !v)}
+          onClick={() => setShuffleOpen(v => !v)}
           className="flex items-center gap-2 text-[12px] text-text-secondary hover:text-text-primary transition-colors bg-transparent border-none cursor-pointer font-sans"
         >
-          <span>{showShuffle ? '▾' : '▸'}</span>
+          <span>{shuffleOpen ? '▾' : '▸'}</span>
           <span>Shuffle</span>
         </button>
-        {showShuffle && (
+        {shuffleOpen && (
           <Btn onClick={shuffleAll} size="sm" disabled={activeCats.length === 0}>
             Shuffle all
           </Btn>
@@ -324,7 +324,7 @@ export default function SessionBuilder() {
       </div>
 
       {/* Session columns — collapseable */}
-      {showShuffle && (
+      {shuffleOpen && (
       <div
         className="grid gap-4"
         style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(activeCats.length, 1), 3)}, 1fr)` }}
