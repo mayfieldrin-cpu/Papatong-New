@@ -114,6 +114,8 @@ export const useStore = create<PapatongStore>((set, get) => ({
           (data.categories.length ? data.categories : DEFAULT_CATS).map(c => c.id)
         ),
       })
+      // Load knowledge cards separately (different tables)
+      await get().loadCards()
     } catch (e) {
       console.error('loadAll error:', e)
       set({ loaded: true })
@@ -206,6 +208,10 @@ export const useStore = create<PapatongStore>((set, get) => ({
       supabase.from('card_links').select('*'),
       supabase.from('entry_card_links').select('*'),
     ])
+    if (cardsRes.error)     console.error('loadCards error:', cardsRes.error.message)
+    if (linksRes.error)     console.error('loadCardLinks error:', linksRes.error.message)
+    if (entryLinksRes.error)console.error('loadEntryLinks error:', entryLinksRes.error.message)
+    console.log(`[Papatong] loadCards: ${(cardsRes.data??[]).length} cards, ${(linksRes.data??[]).length} links, ${(entryLinksRes.data??[]).length} entry-links`)
     const rawCards = (cardsRes.data ?? []) as KnowledgeCard[]
     const links = linksRes.data ?? []
     const entryLinks = entryLinksRes.data ?? []
