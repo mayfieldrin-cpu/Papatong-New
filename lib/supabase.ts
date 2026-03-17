@@ -44,11 +44,24 @@ export async function loadAllData() {
     supabase.from('practice_log').select('*').order('practiced_at', { ascending: false }),
     supabase.from('practice_entries').select('*').order('practiced_at', { ascending: false }),
   ])
+
+  // Log any errors so we can debug
+  if (cats.error)  console.error('load categories error:', cats.error.message)
+  if (doms.error)  console.error('load domains error:',    doms.error.message)
+  if (skls.error)  console.error('load skills error:',     skls.error.message)
+  if (logs.error)  console.error('load logs error:',       logs.error.message)
+  if (ents.error)  console.error('load entries error:',    ents.error.message)
+
+  const skills = (skls.data ?? []).map(r => normalizeSkill(r as Record<string, unknown>))
+  const entries = (ents.data ?? []).map(r => normalizeEntry(r as Record<string, unknown>))
+
+  console.log(`[Papatong] loaded: ${(cats.data??[]).length} cats, ${(doms.data??[]).length} domains, ${skills.length} skills, ${(logs.data??[]).length} logs, ${entries.length} entries`)
+
   return {
     categories: (cats.data ?? []) as Category[],
     domains:    (doms.data ?? []) as Domain[],
-    skills:     (skls.data ?? []).map(normalizeSkill),
+    skills,
     logs:       (logs.data ?? []) as PracticeLog[],
-    entries:    (ents.data ?? []).map(r => normalizeEntry(r as Record<string,unknown>)),
+    entries,
   }
 }
