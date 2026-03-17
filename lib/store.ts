@@ -3,7 +3,7 @@ import { supabase, loadAllData, normalizeSkill, normalizeEntry } from '@/lib/sup
 import { DEFAULT_CATS, DEFAULT_DOMAINS } from '@/lib/palette'
 import type {
   Category, Domain, Skill, PracticeLog, PracticeEntry,
-  Slot, ConfidenceLevel
+  Slot, ConfidenceLevel, KnowledgeCard
 } from '@/types'
 
 // ── Helpers ──────────────────────────────────────
@@ -23,6 +23,7 @@ interface PapatongStore {
   skills: Skill[]
   logs: PracticeLog[]
   entries: PracticeEntry[]
+  cards: KnowledgeCard[]
   loaded: boolean
 
   // Session
@@ -53,6 +54,16 @@ interface PapatongStore {
   updateSkill: (id: string, patch: Partial<Skill>) => Promise<void>
   deleteSkill: (id: string) => Promise<void>
 
+  // Actions — knowledge cards
+  loadCards: () => Promise<void>
+  addCard: (c: KnowledgeCard) => Promise<void>
+  updateCard: (id: string, patch: Partial<KnowledgeCard>) => Promise<void>
+  deleteCard: (id: string) => Promise<void>
+  linkCards: (fromId: string, toId: string) => Promise<void>
+  unlinkCards: (fromId: string, toId: string) => Promise<void>
+  linkEntryCard: (entryId: string, cardId: string) => Promise<void>
+  unlinkEntryCard: (entryId: string, cardId: string) => Promise<void>
+
   // Actions — entries
   addEntry:    (e: PracticeEntry) => Promise<void>
   updateEntry: (id: string, patch: Partial<PracticeEntry>) => Promise<void>
@@ -77,6 +88,7 @@ export const useStore = create<PapatongStore>((set, get) => ({
   skills: [],
   logs: [],
   entries: [],
+  cards: [],
   loaded: false,
   sessionActiveCats: new Set(),
   sessionSlots: {},
@@ -185,6 +197,73 @@ export const useStore = create<PapatongStore>((set, get) => ({
     }))
     await supabase.from('skills').delete().eq('id', id)
     await supabase.from('practice_log').delete().eq('skill_id', id)
+  },
+
+  // ── Knowledge Cards ──────────────────────────
+  loadCards: async () => {
+    const [cardsRes, linksRes, entryLinksRes] = await Promise.all([
+      supabase.from('knowledge_cards').select('*').order('updated_at', { ascending: false }),
+      supabase.from('card_links').select('*'),
+      supabase.from('entry_card_links').select('*'),
+    ])
+    const rawCards = (cardsRes.data ?? []) as KnowledgeCard[]
+    const links = linksRes.data ?? []
+    const entryLinks = entryLinksRes.data ?? []
+    const cards = rawCards.map(c => ({
+      ...c,
+      skill_ids: c.skill_ids ?? [],
+      parent_id: c.parent_id ?? null,
+      linked_card_ids: links.filter((l: {from_id:string,to_id:string}) => l.from_id === c.id).map((l: {from_id:string,to_id:string}) => l.to_id),
+      linked_entry_ids: entryLinks.filter((l: {entry_id:string,card_id:string}) => l.card_id === c.id).map((l: {entry_id:string,card_id:string}) => l.entry_id),
+    }))
+    set({ cards })
+  },
+  addCard: async (c) => {
+    set(st => ({ cards: [c, ...st.cards] }))
+    const { error } = await supabase.from('knowledge_cards').insert({
+      id: c.id, title: c.title, body: c.body,
+      skill_ids: c.skill_ids ?? [], parent_id: c.parent_id ?? null,
+    })
+    if (error) console.error('addCard:', error.message)
+  },
+  updateCard: async (id, patch) => {
+    set(st => ({ cards: st.cards.map(c => c.id === id ? { ...c, ...patch, updated_at: new Date().toISOString() } : c) }))
+    const c = get().cards.find(x => x.id === id)
+    if (!c) return
+    const { error } = await supabase.from('knowledge_cards').update({
+      title: c.title, body: c.body,
+      skill_ids: c.skill_ids ?? [], parent_id: c.parent_id ?? null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', id)
+    if (error) console.error('updateCard:', error.message)
+  },
+  deleteCard: async (id) => {
+    set(st => ({ cards: st.cards.filter(c => c.id !== id) }))
+    await supabase.from('knowledge_cards').delete().eq('id', id)
+  },
+  linkCards: async (fromId, toId) => {
+    set(st => ({ cards: st.cards.map(c =>
+      c.id === fromId ? { ...c, linked_card_ids: [...(c.linked_card_ids ?? []), toId] } : c
+    )}))
+    await supabase.from('card_links').insert({ from_id: fromId, to_id: toId })
+  },
+  unlinkCards: async (fromId, toId) => {
+    set(st => ({ cards: st.cards.map(c =>
+      c.id === fromId ? { ...c, linked_card_ids: (c.linked_card_ids ?? []).filter(x => x !== toId) } : c
+    )}))
+    await supabase.from('card_links').delete().eq('from_id', fromId).eq('to_id', toId)
+  },
+  linkEntryCard: async (entryId, cardId) => {
+    set(st => ({ cards: st.cards.map(c =>
+      c.id === cardId ? { ...c, linked_entry_ids: [...(c.linked_entry_ids ?? []), entryId] } : c
+    )}))
+    await supabase.from('entry_card_links').insert({ entry_id: entryId, card_id: cardId })
+  },
+  unlinkEntryCard: async (entryId, cardId) => {
+    set(st => ({ cards: st.cards.map(c =>
+      c.id === cardId ? { ...c, linked_entry_ids: (c.linked_entry_ids ?? []).filter(x => x !== entryId) } : c
+    )}))
+    await supabase.from('entry_card_links').delete().eq('entry_id', entryId).eq('card_id', cardId)
   },
 
   // ── Entries ──────────────────────────────────

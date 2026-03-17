@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useStore } from '@/lib/store'
 import PracticeJournal from './PracticeJournal'
+import KnowledgeView from './KnowledgeView'
 import { SectionTitle } from '@/components/shared/ui'
 import clsx from 'clsx'
 
@@ -16,8 +17,8 @@ function calcStreak(dates: string[]): number {
 }
 
 export default function RecordView() {
-  const { entries } = useStore()
-  const [open, setOpen] = useState<'' | 'practice'>('')
+  const { entries, cards } = useStore()
+  const [open, setOpen] = useState<'' | 'practice' | 'knowledge'>('')
 
   const practiceStreak = calcStreak(entries.map(e => e.practiced_at.slice(0, 10)))
 
@@ -27,6 +28,16 @@ export default function RecordView() {
       <div className={clsx('slide-page', open === 'practice' && 'open')}>
         <div className="max-w-[640px] mx-auto px-5 pt-8 pb-20">
           <PracticeJournal onBack={() => setOpen('')} />
+        </div>
+      </div>
+
+      {/* Knowledge slide-in page */}
+      <div className={clsx('slide-page', open === 'knowledge' && 'open')}>
+        <div className="max-w-[640px] mx-auto px-5 pt-8 pb-20">
+          <button onClick={() => setOpen('')} className="flex items-center gap-1.5 text-[13px] text-text-secondary hover:text-text-primary transition-colors bg-transparent border-none cursor-pointer mb-6">
+            ← Journals
+          </button>
+          <KnowledgeView />
         </div>
       </div>
 
@@ -56,12 +67,21 @@ export default function RecordView() {
           <span className="absolute bottom-5 right-5 text-[16px] text-text-hint group-hover:text-text-secondary transition-colors">→</span>
         </button>
 
-        {/* Visual Creation card — coming soon */}
-        <div className="bg-surface border border-border-subtle rounded-xl p-5 flex flex-col gap-3 min-h-[160px] relative opacity-50">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-text-hint">Visual</span>
-          <span className="text-[17px] font-medium text-text-primary leading-tight">Visual Creation</span>
-          <span className="text-[11px] text-text-hint mt-auto">Coming soon</span>
-        </div>
+        {/* Knowledge card */}
+        <button
+          onClick={() => setOpen('knowledge')}
+          className="bg-surface border border-border-subtle rounded-xl p-5 text-left cursor-pointer hover:border-border-default transition-all group flex flex-col gap-3 min-h-[160px] relative"
+        >
+          <span className="font-mono text-[10px] uppercase tracking-widest text-text-hint">Knowledge</span>
+          <span className="text-[17px] font-medium text-text-primary leading-tight">Knowledge Cards</span>
+          <div className="flex gap-4 mt-auto">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-[20px] font-light">{cards.length}</span>
+              <span className="text-[10px] text-text-hint">cards</span>
+            </div>
+          </div>
+          <span className="absolute bottom-5 right-5 text-[16px] text-text-hint group-hover:text-text-secondary transition-colors">→</span>
+        </button>
       </div>
     </div>
   )

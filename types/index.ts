@@ -84,6 +84,35 @@ export interface WeeklyVolume {
   movingAvg: number  // 4-week rolling average
 }
 
+// ── Knowledge types ──────────────────────────────
+
+export interface KnowledgeCard {
+  id: string
+  title: string
+  body: string
+  skill_ids: string[]
+  parent_id: string | null
+  created_at?: string
+  updated_at?: string
+  // Loaded relations
+  linked_card_ids?: string[]   // from card_links
+  linked_entry_ids?: string[]  // from entry_card_links
+}
+
+// ── Knowledge types ──────────────────────────────
+
+export interface KnowledgeCard {
+  id: string
+  title: string
+  body: string
+  skill_ids: string[]
+  parent_id: string | null
+  created_at?: string
+  updated_at?: string
+  linked_card_ids?: string[]
+  linked_entry_ids?: string[]
+}
+
 // ── Explore types ────────────────────────────────
 
 export interface ExploreResults {
