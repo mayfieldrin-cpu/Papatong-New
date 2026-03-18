@@ -1,0 +1,55 @@
+// ─────────────────────────────────────────────────────────────
+// CHANGES TO components/record/PracticeJournal.tsx
+// Two surgical edits only. Nothing else changes.
+// ─────────────────────────────────────────────────────────────
+
+// ── EDIT 1 — Add import at the top ───────────────────────────
+// After the existing imports, add:
+//
+//   import NotionNotesPanel from './NotionNotesPanel'
+
+
+// ── EDIT 2 — Add panel inside entry detail view ───────────────
+// In the VIEW MODE block (the `else` branch after `editId === openEntry.id`),
+// find this existing block near the bottom of the view (around line 310-338):
+//
+//   {/* Linked knowledge cards */}
+//   {(() => {
+//     const linkedCards = cards.filter(c => (c.linked_entry_ids ?? []).includes(openEntry.id))
+//     if (!linkedCards.length) return null
+//     return (
+//       <div className="mt-6 pt-5 border-t border-border-subtle">
+//         <p className="font-mono text-[10px] uppercase tracking-widest text-text-hint mb-2.5">Knowledge cards</p>
+//         ...
+//       </div>
+//     )
+//   })()}
+//
+// AFTER that entire block, add:
+//
+//   <div className="mt-0 pt-5 border-t border-border-subtle">
+//     <NotionNotesPanel entryId={openEntry.id} />
+//   </div>
+//
+// ─────────────────────────────────────────────────────────────
+// That's it. No other changes to PracticeJournal.tsx.
+// ─────────────────────────────────────────────────────────────
+
+
+// ── What the final view mode section looks like ──────────────
+//
+//   {/* Linked knowledge cards */}
+//   {(() => {
+//     const linkedCards = ...
+//     ...
+//   })()}
+//
+//   {/* Notion notes — NEW */}
+//   <div className="mt-0 pt-5 border-t border-border-subtle">
+//     <NotionNotesPanel entryId={openEntry.id} />
+//   </div>
+//
+//   <div className="flex justify-end gap-2 mt-6">
+//     <Btn size="sm" onClick={() => { ... }}>Edit</Btn>
+//     <Btn size="sm" variant="danger" ...>Delete</Btn>
+//   </div>

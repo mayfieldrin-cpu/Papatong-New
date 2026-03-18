@@ -1,0 +1,95 @@
+// ─────────────────────────────────────────────────────────────
+// CHANGES TO lib/store.ts  — 4 surgical edits, described below.
+// ─────────────────────────────────────────────────────────────
+
+// ── EDIT 1 ────────────────────────────────────────────────────
+// In the import at the top, add loadNotionData, insertNotionLink,
+// deleteNotionLink to the existing import from '@/lib/supabase':
+//
+// BEFORE:
+//   import { supabase, loadAllData, normalizeSkill, normalizeEntry } from '@/lib/supabase'
+//
+// AFTER:
+//   import {
+//     supabase, loadAllData, normalizeSkill, normalizeEntry,
+//     loadNotionData, insertNotionLink, deleteNotionLink,
+//   } from '@/lib/supabase'
+
+
+// ── EDIT 2 ────────────────────────────────────────────────────
+// In the import of types, add NotionNote:
+//
+// BEFORE:
+//   import type {
+//     Category, Domain, Skill, PracticeLog, PracticeEntry,
+//     Slot, ConfidenceLevel, KnowledgeCard
+//   } from '@/types'
+//
+// AFTER:
+//   import type {
+//     Category, Domain, Skill, PracticeLog, PracticeEntry,
+//     Slot, ConfidenceLevel, KnowledgeCard, NotionNote
+//   } from '@/types'
+
+
+// ── EDIT 3 ────────────────────────────────────────────────────
+// In the PapatongStore interface, add these fields + actions
+// after the existing cards/entries declarations:
+//
+//   // Notion
+//   notionNotes:       NotionNote[]
+//   notionLinks:       { notion_page_id: string; entry_id: string }[]
+//   loadNotionNotes:   () => Promise<void>
+//   linkNotionNote:    (notion_page_id: string, entry_id: string) => Promise<void>
+//   unlinkNotionNote:  (notion_page_id: string, entry_id: string) => Promise<void>
+
+
+// ── EDIT 4 ────────────────────────────────────────────────────
+// In the create<PapatongStore>() body, add initial state values
+// right after the existing `cards: [],` line:
+//
+//   notionNotes:  [],
+//   notionLinks:  [],
+//
+// Then add these three action implementations anywhere after
+// the loadCards action (e.g. right before the entries section):
+
+/*
+
+  loadNotionNotes: async () => {
+    try {
+      const { notionNotes, notionLinks } = await loadNotionData()
+      set({ notionNotes, notionLinks })
+    } catch (e) {
+      console.error('loadNotionNotes error:', e)
+    }
+  },
+
+  linkNotionNote: async (notion_page_id, entry_id) => {
+    // Optimistic update
+    set(st => ({
+      notionLinks: [...st.notionLinks, { notion_page_id, entry_id }],
+    }))
+    await insertNotionLink(notion_page_id, entry_id)
+  },
+
+  unlinkNotionNote: async (notion_page_id, entry_id) => {
+    // Optimistic update
+    set(st => ({
+      notionLinks: st.notionLinks.filter(
+        l => !(l.notion_page_id === notion_page_id && l.entry_id === entry_id)
+      ),
+    }))
+    await deleteNotionLink(notion_page_id, entry_id)
+  },
+
+*/
+
+// ── EDIT 5 ────────────────────────────────────────────────────
+// Inside loadAll(), after the line `await get().loadCards()`
+// add:
+//
+//   await get().loadNotionNotes()
+//
+// This ensures Notion data loads as part of the same
+// DataProvider boot sequence.

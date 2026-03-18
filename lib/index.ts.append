@@ -1,0 +1,17 @@
+// ─────────────────────────────────────────────────────────────
+// ADD THIS BLOCK to the bottom of types/index.ts
+// Do not replace the file — just append these lines.
+// ─────────────────────────────────────────────────────────────
+
+// ── Notion types ─────────────────────────────────────────────
+
+export interface NotionNote {
+  notion_page_id: string
+  title:          string
+  date:           string | null   // 'YYYY-MM-DD'
+  tags:           string[]
+  skill_names:    string[]
+  excerpt:        string
+  notion_url:     string
+  last_edited:    string
+}

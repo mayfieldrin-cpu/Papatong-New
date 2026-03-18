@@ -1,9 +1,12 @@
 import { create } from 'zustand'
-import { supabase, loadAllData, normalizeSkill, normalizeEntry } from '@/lib/supabase'
+import {
+  supabase, loadAllData, normalizeSkill, normalizeEntry,
+  loadNotionData, insertNotionLink, deleteNotionLink,
+} from '@/lib/supabase'
 import { DEFAULT_CATS, DEFAULT_DOMAINS } from '@/lib/palette'
 import type {
   Category, Domain, Skill, PracticeLog, PracticeEntry,
-  Slot, ConfidenceLevel, KnowledgeCard
+  Slot, ConfidenceLevel, KnowledgeCard, NotionNote
 } from '@/types'
 
 // ── Helpers ──────────────────────────────────────
@@ -25,6 +28,13 @@ interface PapatongStore {
   entries: PracticeEntry[]
   cards: KnowledgeCard[]
   loaded: boolean
+
+  // Notion
+  notionNotes:      NotionNote[]
+  notionLinks:      { notion_page_id: string; entry_id: string }[]
+  loadNotionNotes:  () => Promise<void>
+  linkNotionNote:   (notion_page_id: string, entry_id: string) => Promise<void>
+  unlinkNotionNote: (notion_page_id: string, entry_id: string) => Promise<void>
 
   // Session
   sessionActiveCats: Set<string>
@@ -90,6 +100,8 @@ export const useStore = create<PapatongStore>((set, get) => ({
   entries: [],
   cards: [],
   loaded: false,
+  notionNotes: [],
+  notionLinks: [],
   sessionActiveCats: new Set(),
   sessionSlots: {},
   sessionCounts: {},
@@ -114,12 +126,38 @@ export const useStore = create<PapatongStore>((set, get) => ({
           (data.categories.length ? data.categories : DEFAULT_CATS).map(c => c.id)
         ),
       })
-      // Load knowledge cards separately (different tables)
       await get().loadCards()
+      await get().loadNotionNotes()
     } catch (e) {
       console.error('loadAll error:', e)
       set({ loaded: true })
     }
+  },
+
+  // ── Notion ───────────────────────────────────
+  loadNotionNotes: async () => {
+    try {
+      const { notionNotes, notionLinks } = await loadNotionData()
+      set({ notionNotes, notionLinks })
+    } catch (e) {
+      console.error('loadNotionNotes error:', e)
+    }
+  },
+
+  linkNotionNote: async (notion_page_id, entry_id) => {
+    set(st => ({
+      notionLinks: [...st.notionLinks, { notion_page_id, entry_id }],
+    }))
+    await insertNotionLink(notion_page_id, entry_id)
+  },
+
+  unlinkNotionNote: async (notion_page_id, entry_id) => {
+    set(st => ({
+      notionLinks: st.notionLinks.filter(
+        l => !(l.notion_page_id === notion_page_id && l.entry_id === entry_id)
+      ),
+    }))
+    await deleteNotionLink(notion_page_id, entry_id)
   },
 
   // ── Categories ───────────────────────────────
@@ -208,18 +246,18 @@ export const useStore = create<PapatongStore>((set, get) => ({
       supabase.from('card_links').select('*'),
       supabase.from('entry_card_links').select('*'),
     ])
-    if (cardsRes.error)     console.error('loadCards error:', cardsRes.error.message)
-    if (linksRes.error)     console.error('loadCardLinks error:', linksRes.error.message)
-    if (entryLinksRes.error)console.error('loadEntryLinks error:', entryLinksRes.error.message)
+    if (cardsRes.error)      console.error('loadCards error:', cardsRes.error.message)
+    if (linksRes.error)      console.error('loadCardLinks error:', linksRes.error.message)
+    if (entryLinksRes.error) console.error('loadEntryLinks error:', entryLinksRes.error.message)
     console.log(`[Papatong] loadCards: ${(cardsRes.data??[]).length} cards, ${(linksRes.data??[]).length} links, ${(entryLinksRes.data??[]).length} entry-links`)
-    const rawCards = (cardsRes.data ?? []) as KnowledgeCard[]
-    const links = linksRes.data ?? []
+    const rawCards   = (cardsRes.data ?? []) as KnowledgeCard[]
+    const links      = linksRes.data ?? []
     const entryLinks = entryLinksRes.data ?? []
     const cards = rawCards.map(c => ({
       ...c,
-      skill_ids: c.skill_ids ?? [],
-      parent_id: c.parent_id ?? null,
-      linked_card_ids: links.filter((l: {from_id:string,to_id:string}) => l.from_id === c.id).map((l: {from_id:string,to_id:string}) => l.to_id),
+      skill_ids:        c.skill_ids ?? [],
+      parent_id:        c.parent_id ?? null,
+      linked_card_ids:  links.filter((l: {from_id:string,to_id:string}) => l.from_id === c.id).map((l: {from_id:string,to_id:string}) => l.to_id),
       linked_entry_ids: entryLinks.filter((l: {entry_id:string,card_id:string}) => l.card_id === c.id).map((l: {entry_id:string,card_id:string}) => l.entry_id),
     }))
     set({ cards })

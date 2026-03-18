@@ -4,6 +4,7 @@ import { useStore } from '@/lib/store'
 import { palColor } from '@/lib/palette'
 import { BackBtn, Btn, Card, SectionTitle, Empty, Input, Textarea, Select } from '@/components/shared/ui'
 import RichEditor from '@/components/shared/RichEditor'
+import NotionNotesPanel from './NotionNotesPanel'
 import type { PracticeEntry } from '@/types'
 import clsx from 'clsx'
 
@@ -169,34 +170,25 @@ export default function PracticeJournal({ onBack, onNavigateToCard }: Props) {
                 {/* Skills */}
                 <div>
                   <p className="text-[11px] font-medium text-text-secondary mb-2 tracking-wide uppercase">Skills</p>
-                  {/* Current skill pills */}
                   <div className="flex flex-wrap gap-1.5 mb-2 min-h-[24px]">
                     {editSkillIds.map(id => {
                       const s = skills.find(x => x.id === id)
-                      if (!s) return null
-                      const cat = categories.find(c => c.id === s.catId)
+                      const cat = s ? categories.find(c => c.id === s.catId) : null
                       const p = cat ? palColor(cat.color) : null
-                      return (
+                      return s ? (
                         <span key={id} className="flex items-center gap-1 text-[11px] px-2 py-[2px] rounded-full" style={p ? { background: p.bg, color: p.text } : { background: '#242422', color: '#9a9a94' }}>
                           {s.name}
-                          <button onClick={() => setEditSkillIds(prev => prev.filter(x => x !== id))} className="border-none bg-transparent cursor-pointer opacity-60 hover:opacity-100 text-[10px] leading-none">✕</button>
+                          <button onClick={() => setEditSkillIds(prev => prev.filter(x => x !== id))} className="border-none bg-transparent cursor-pointer opacity-60 hover:opacity-100 text-[10px]">✕</button>
                         </span>
-                      )
+                      ) : null
                     })}
-                    {editSpontSkills.map((n, i) => (
-                      <span key={i} className="flex items-center gap-1 text-[11px] px-2 py-[2px] rounded-full bg-surface2 text-text-secondary italic">
-                        {n}
-                        <button onClick={() => setEditSpontSkills(prev => prev.filter((_, j) => j !== i))} className="border-none bg-transparent cursor-pointer opacity-60 hover:opacity-100 text-[10px] leading-none">✕</button>
-                      </span>
-                    ))}
                   </div>
-                  {/* Skill search to add */}
                   <Input
                     value={skillSearch}
                     onChange={e => setSkillSearch(e.target.value)}
                     placeholder="Search skills to add…"
                   />
-                  {skillSearch.trim() && (
+                  {skillSearch && (
                     <div className="mt-1.5 flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
                       {skills
                         .filter(s => s.name.toLowerCase().includes(skillSearch.toLowerCase()) && !editSkillIds.includes(s.id))
@@ -208,7 +200,7 @@ export default function PracticeJournal({ onBack, onNavigateToCard }: Props) {
                             <button
                               key={s.id}
                               onClick={() => { setEditSkillIds(prev => [...prev, s.id]); setSkillSearch('') }}
-                              className="text-[11px] px-2 py-[2px] rounded-full cursor-pointer border-none transition-opacity hover:opacity-80"
+                              className="text-[11px] px-2.5 py-1 rounded-full cursor-pointer border-none"
                               style={p ? { background: p.bg, color: p.text } : { background: '#242422', color: '#9a9a94' }}
                             >
                               {s.name}
@@ -220,17 +212,34 @@ export default function PracticeJournal({ onBack, onNavigateToCard }: Props) {
                   )}
                 </div>
 
-                {/* Note */}
-                <Textarea value={editNote} onChange={e => setEditNote(e.target.value)} style={{ minHeight: 160 }} />
+                {/* Spont skills */}
+                <div>
+                  <p className="text-[11px] font-medium text-text-secondary mb-2 tracking-wide uppercase">Spontaneous</p>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {editSpontSkills.map((s, i) => (
+                      <span key={i} className="flex items-center gap-1 text-[11px] px-2 py-[2px] rounded-full bg-surface2 text-text-secondary italic">
+                        {s}
+                        <button onClick={() => setEditSpontSkills(prev => prev.filter((_, j) => j !== i))} className="border-none bg-transparent cursor-pointer opacity-60 hover:opacity-100 text-[10px]">✕</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <RichEditor
+                  content={editNote}
+                  onChange={setEditNote}
+                  placeholder="Session notes…"
+                  minHeight={160}
+                />
 
                 {/* Tags */}
                 <div>
                   <p className="text-[11px] font-medium text-text-secondary mb-2 tracking-wide uppercase">Tags</p>
-                  <div className="flex flex-wrap gap-1.5 mb-2 min-h-[24px]">
+                  <div className="flex flex-wrap gap-1.5 mb-2">
                     {editTags.map((t, i) => (
                       <span key={i} className="flex items-center gap-1 bg-surface2 border border-border-default rounded-full px-2.5 py-0.5 text-[11px]">
                         {t}
-                        <button onClick={() => setEditTags(prev => prev.filter((_, j) => j !== i))} className="text-text-hint hover:text-red border-none bg-transparent cursor-pointer text-[10px] leading-none">✕</button>
+                        <button onClick={() => setEditTags(prev => prev.filter((_, j) => j !== i))} className="text-text-hint hover:text-red border-none bg-transparent cursor-pointer text-[11px]">✕</button>
                       </span>
                     ))}
                   </div>
@@ -245,7 +254,7 @@ export default function PracticeJournal({ onBack, onNavigateToCard }: Props) {
                           setEditTagInput('')
                         }
                       }}
-                      placeholder="Add a tag…"
+                      placeholder="Add tag…"
                       className="flex-1"
                     />
                     <Btn size="sm" onClick={() => {
@@ -254,18 +263,6 @@ export default function PracticeJournal({ onBack, onNavigateToCard }: Props) {
                       setEditTagInput('')
                     }}>Add</Btn>
                   </div>
-                  {/* Suggest existing tags */}
-                  {allTags.filter(t => !editTags.includes(t)).length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {allTags.filter(t => !editTags.includes(t)).slice(0, 8).map(t => (
-                        <button
-                          key={t}
-                          onClick={() => setEditTags(prev => [...prev, t])}
-                          className="px-2 py-[2px] text-[11px] rounded-full border border-border-subtle text-text-hint hover:text-text-primary hover:border-border-default bg-transparent cursor-pointer transition-colors"
-                        >{t}</button>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
@@ -336,6 +333,11 @@ export default function PracticeJournal({ onBack, onNavigateToCard }: Props) {
                     </div>
                   )
                 })()}
+
+                {/* Notion notes */}
+                <div className="pt-5 border-t border-border-subtle">
+                  <NotionNotesPanel entryId={openEntry.id} />
+                </div>
 
                 <div className="flex justify-end gap-2 mt-6">
                   <Btn size="sm" onClick={() => {

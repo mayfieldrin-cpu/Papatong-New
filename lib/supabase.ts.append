@@ -1,0 +1,53 @@
+// ─────────────────────────────────────────────────────────────
+// ADD THIS BLOCK to the bottom of lib/supabase.ts
+// Do not replace the file — just append these functions.
+// ─────────────────────────────────────────────────────────────
+import type { NotionNote } from '@/types'
+
+// ── Load cached Notion notes + their entry links ──────────────
+export async function loadNotionData(): Promise<{
+  notionNotes:  NotionNote[]
+  notionLinks:  { notion_page_id: string; entry_id: string }[]
+}> {
+  const [notesRes, linksRes] = await Promise.all([
+    supabase
+      .from('notion_notes_cache')
+      .select('*')
+      .order('date', { ascending: false, nullsFirst: false }),
+    supabase
+      .from('note_entry_links')
+      .select('notion_page_id, entry_id'),
+  ])
+
+  if (notesRes.error) console.error('loadNotionNotes error:', notesRes.error.message)
+  if (linksRes.error) console.error('loadNotionLinks error:', linksRes.error.message)
+
+  return {
+    notionNotes: (notesRes.data ?? []) as NotionNote[],
+    notionLinks: (linksRes.data ?? []) as { notion_page_id: string; entry_id: string }[],
+  }
+}
+
+// ── Link a Notion note to a practice entry ────────────────────
+export async function insertNotionLink(
+  notion_page_id: string,
+  entry_id: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('note_entry_links')
+    .insert({ notion_page_id, entry_id })
+  if (error) console.error('insertNotionLink:', error.message)
+}
+
+// ── Remove a link ─────────────────────────────────────────────
+export async function deleteNotionLink(
+  notion_page_id: string,
+  entry_id: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('note_entry_links')
+    .delete()
+    .eq('notion_page_id', notion_page_id)
+    .eq('entry_id', entry_id)
+  if (error) console.error('deleteNotionLink:', error.message)
+}

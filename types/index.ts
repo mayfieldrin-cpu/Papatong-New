@@ -94,21 +94,6 @@ export interface KnowledgeCard {
   parent_id: string | null
   created_at?: string
   updated_at?: string
-  // Loaded relations
-  linked_card_ids?: string[]   // from card_links
-  linked_entry_ids?: string[]  // from entry_card_links
-}
-
-// ── Knowledge types ──────────────────────────────
-
-export interface KnowledgeCard {
-  id: string
-  title: string
-  body: string
-  skill_ids: string[]
-  parent_id: string | null
-  created_at?: string
-  updated_at?: string
   linked_card_ids?: string[]
   linked_entry_ids?: string[]
 }
@@ -124,4 +109,17 @@ export interface ExploreResults {
 export interface BreadcrumbItem {
   word: string
   results: ExploreResults
+}
+
+// ── Notion types ─────────────────────────────────
+
+export interface NotionNote {
+  notion_page_id: string
+  title:          string
+  date:           string | null
+  tags:           string[]
+  skill_names:    string[]
+  excerpt:        string
+  notion_url:     string
+  last_edited:    string
 }
